@@ -6,18 +6,6 @@
 #include <sys/user.h> // For CPU register access via user_regs_structs.
 #include <errno.h>
 
-/* This is a C implementation of a DGB-like debugger proof of concept.
-*
-* Compile: gcc -o ddg DDG.c
-* 
-* Run: ./ddg ./target.c
-*
-* How does it work? 
-*
-* I'm using ptrace to attach to a process, a target program that is executing. 
-* At each 'step' I am then printing the RIP register (instruction pointer).
-*/
-
 
 // This is a Proof of Concept debugger, and depicts the registers only. 
 
