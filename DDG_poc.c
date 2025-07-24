@@ -18,12 +18,12 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    child = fork(); // Duplicate the process.
+    child = fork(); // Create new process, a duplicate of the current process.
 
     if(child == 0){
         // Child process.
         int status;
-        ptrace(PT_TRACE_ME, 0, NULL, NULL); // Macro to be PTRACE_TRACEME on Linux.
+        ptrace(PTRACE_TRACEME, 0, NULL, NULL); 
         execvp(argv[1], &argv[2]);
         perror("execvp");
         exit(1);
@@ -33,15 +33,16 @@ int main(int argc, char *argv[])
         struct user_regs_struct registers;
 
         waitpid(child, &status, 0);
-        fprintf("Child process started. PID:  %d\n", child); // Not seen?? 
+        printf("Child process started. PID:  %d\n", child); // Not seen?? 
 
         // Continue until child exists.
         while(WIFSTOPPED(status)){
             // Get registers.
-            ptrace(PTRACE_GETREGS, child, NULL, &registers); // this isn't working as expected. 
+            ptrace(PTRACE_GETREGS, child, NULL, &registers); 
 
+            // Print the instruction pointer.
+            printf("RIP: 0x%llx\n", registers.rip);
 
-            // need to come back.
         }
 
         
