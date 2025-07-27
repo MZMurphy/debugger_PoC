@@ -11,41 +11,53 @@
 
 int main(int argc, char *argv[])
 {
-    pid_t child; // Grab the process ID.
+    pid_t child_process; // Grab the process ID.
 
     if (argc < 2){
         fprintf(stderr, 'Usage: %s program [args...]\n');
         exit(1);
     }
 
-    child = fork(); // Create new process, a duplicate of the current process.
+    child_process = fork(); // Create new process, a duplicate of the current process.
 
-    if(child == 0){
+    if(child_process == 0){
         // Child process.
         int status;
+
         ptrace(PTRACE_TRACEME, 0, NULL, NULL); 
         execvp(argv[1], &argv[2]);
         perror("execvp");
         exit(1);
-    }else if(child > 0) 
-    {   // Parent process (debugger).
+
+    }else if(child_process > 0) 
+    {   
+        // Parent process (debugger).
         int status;
         struct user_regs_struct registers;
 
-        waitpid(child, &status, 0);
-        printf("Child process started. PID:  %d\n", child); // Not seen?? 
+        waitpid(child_process, &status, 0);
+        printf("Child process started. PID:  %d\n", child_process); // Not seen?? 
 
         // Continue until child exists.
         while(WIFSTOPPED(status)){
             // Get registers.
-            ptrace(PTRACE_GETREGS, child, NULL, &registers); 
+            ptrace(PTRACE_GETREGS, child_process, NULL, &registers); 
 
             // Print the instruction pointer.
             printf("RIP: 0x%llx\n", registers.rip);
 
+            // Below is the core of the single-step function.
+
+            ptrace(PTRACE_SINGLESTEP, child_process, NULL, NULL); // Tells kernel to exeute one machine instruction & the stop. Does so via SIGRAP.
+            waitpid(child_process, &status, 0); // Pauses the parent process, which is the DDG, until child process changes state. Updates status variable with why process stopped. 
+            // Above the PIDof the child process is returned. 
         }
 
-        
+        printf("Child exited with status %d\n", WEXITSTATUS(status));
 
+    }else{
+        perror("fork");
+        exit(1);
     }
+    return 0;
 }
